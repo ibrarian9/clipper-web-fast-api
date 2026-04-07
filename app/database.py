@@ -27,5 +27,5 @@ def get_db():
 
 def init_db():
     """Create all tables if they don't exist."""
-    from models import Job, Clip  # noqa: F401 — ensure models are imported
+    from app.models import Job, Clip  # noqa: F401 — ensure models are imported
     Base.metadata.create_all(bind=engine)
