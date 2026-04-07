@@ -57,7 +57,7 @@ def startup():
     ensure_storage_dirs()
 
     # Fix #9: Auto-cleanup old clips on startup
-    from storage import cleanup_old_clips
+    from app.storage import cleanup_old_clips
     cleaned = cleanup_old_clips()
     if cleaned:
         logger.info(f"Startup cleanup: removed {cleaned} old clip directories")
@@ -111,7 +111,7 @@ async def create_job(
     niche: str = Form("finance"),
     db: Session = Depends(get_db),
 ):
-    from tasks import run_pipeline
+    from app.tasks import run_pipeline
 
     job_id = str(uuid.uuid4())
     job = Job(id=job_id, youtube_url=youtube_url, niche=niche)
@@ -204,7 +204,7 @@ async def storage_page(request: Request, db: Session = Depends(get_db)):
 @app.post("/storage/cleanup")
 async def storage_cleanup(cleanup_type: str = Form("downloads")):
     """Trigger manual storage cleanup."""
-    from storage import cleanup_old_clips, emergency_cleanup
+    from app.storage import cleanup_old_clips, emergency_cleanup
     import shutil
 
     if cleanup_type == "downloads":
@@ -227,7 +227,7 @@ async def storage_cleanup(cleanup_type: str = Form("downloads")):
 @app.get("/settings", response_class=HTMLResponse)
 async def settings_page(request: Request):
     """System settings page."""
-    from uploader import check_session_valid
+    from app.uploader import check_session_valid
     disk = get_disk_usage()
     return templates.TemplateResponse("settings.html", {
         "request": request,
@@ -289,7 +289,7 @@ async def approve_clip(clip_id: str, db: Session = Depends(get_db)):
     db.commit()
 
     # Queue the upload task
-    from uploader import upload_to_tiktok
+    from app.uploader import upload_to_tiktok
     upload_to_tiktok.delay(clip.id, clip.filepath, clip.caption)
 
     return {"status": "approved", "message": "Clip queued for TikTok upload"}
@@ -302,7 +302,7 @@ async def approve_all_clips(job_id: str = Form(...), db: Session = Depends(get_d
     if not clips:
         raise HTTPException(status_code=404, detail="No ready clips found")
 
-    from uploader import upload_to_tiktok
+    from app.uploader import upload_to_tiktok
     for clip in clips:
         clip.status = ClipStatus.approved
         upload_to_tiktok.delay(clip.id, clip.filepath, clip.caption)
@@ -344,7 +344,7 @@ async def clip_cover(clip_id: str, db: Session = Depends(get_db)):
 @app.post("/api/jobs/{job_id}/delete")
 async def delete_job(job_id: str, db: Session = Depends(get_db)):
     """Delete a job and all its clips."""
-    from storage import cleanup_source_video, cleanup_job_clips
+    from app.storage import cleanup_source_video, cleanup_job_clips
 
     job = db.query(Job).filter_by(id=job_id).first()
     if not job:
@@ -365,7 +365,7 @@ async def delete_job(job_id: str, db: Session = Depends(get_db)):
 @app.post("/api/jobs/{job_id}/retry")
 async def retry_job(job_id: str, db: Session = Depends(get_db)):
     """Retry a failed or interrupted job."""
-    from tasks import run_pipeline
+    from app.tasks import run_pipeline
 
     job = db.query(Job).filter_by(id=job_id).first()
     if not job:
@@ -450,7 +450,7 @@ async def job_stream(job_id: str, db: Session = Depends(get_db)):
     async def event_generator():
         while True:
             # Re-query in fresh session
-            from database import SessionLocal
+            from app.database import SessionLocal
             _db = SessionLocal()
             try:
                 _job = _db.query(Job).filter_by(id=job_id).first()
@@ -481,7 +481,7 @@ async def job_stream(job_id: str, db: Session = Depends(get_db)):
 async def system_health(db: Session = Depends(get_db)):
     """System health check: disk, DB, worker status."""
     disk = get_disk_usage()
-    from uploader import check_session_valid
+    from app.uploader import check_session_valid
 
     return {
         "disk": disk,

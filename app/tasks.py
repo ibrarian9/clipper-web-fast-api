@@ -14,10 +14,12 @@ import sys
 import os
 from pathlib import Path
 
-# Ensure app/ directory is in Python path AND is cwd (Celery forked workers need this)
+# Ensure project root is in Python path AND app/ is cwd (Celery forked workers need this)
 _app_dir = str(Path(__file__).resolve().parent)
-if _app_dir not in sys.path:
-    sys.path.insert(0, _app_dir)
+_project_root = str(Path(__file__).resolve().parent.parent)
+for _p in [_app_dir, _project_root]:
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
 os.chdir(_app_dir)
 
 from celery import Celery
@@ -29,8 +31,8 @@ import re
 import logging
 
 from app.config import settings
-from database import SessionLocal
-from models import Job, Clip, JobStatus, ClipStatus
+from app.database import SessionLocal
+from app.models import Job, Clip, JobStatus, ClipStatus
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +122,7 @@ def run_pipeline(self, job_id: str, youtube_url: str, max_clip_duration: int = 9
             db.commit()
 
             logger.info(f"[{job_id[:8]}] Using AI to find viral clips (Groq/{settings.GROQ_MODEL})...")
-            from clip_analyzer import analyze_transcript_for_viral_clips
+            from app.clip_analyzer import analyze_transcript_for_viral_clips
 
             viral_clips = analyze_transcript_for_viral_clips(
                 srt_segments,
@@ -205,7 +207,7 @@ def run_pipeline(self, job_id: str, youtube_url: str, max_clip_duration: int = 9
 
         # ── Step 5: Cleanup source video ──
         if settings.CLEANUP_AFTER_CLIP:
-            from storage import cleanup_source_video
+            from app.storage import cleanup_source_video
             cleanup_source_video(job_id)
 
     except Exception as e:

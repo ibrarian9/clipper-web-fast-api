@@ -99,7 +99,7 @@ def check_rate_limit() -> bool:
 
 def _take_screenshot(page: Page, name: str):
     """Save a screenshot for debugging."""
-    from storage import get_screenshots_dir
+    from app.storage import get_screenshots_dir
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     path = get_screenshots_dir() / f"{name}_{ts}.png"
     try:
@@ -235,14 +235,14 @@ def upload_clip(video_path: str, caption: str, retries: int = 3) -> bool:
 # Celery task wrapper
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-from tasks import app as celery_app
+from app.tasks import app as celery_app
 
 
 @celery_app.task(bind=True, max_retries=2, default_retry_delay=600)
 def upload_to_tiktok(self, clip_id: str, video_path: str, caption: str):
     """Celery task: upload a single clip to TikTok."""
-    from database import SessionLocal
-    from models import Clip, ClipStatus
+    from app.database import SessionLocal
+    from app.models import Clip, ClipStatus
 
     db = SessionLocal()
     clip = db.query(Clip).filter_by(id=clip_id).first()
