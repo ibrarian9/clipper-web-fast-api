@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Storage — Clipper{% endblock %}
+{% block topbar_tag %}storage{% endblock %}
+
+{% block content %}
+<div>
+  <h1 class="text-xl font-bold text-white">Storage Management</h1>
+  <p class="font-mono text-[11px] text-gray-500 mt-1">// monitor disk usage & cleanup</p>
+</div>
+
+<!-- Large Disk Gauge -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-6">
+  <div class="flex items-center gap-8 mb-5">
+    <div class="font-mono text-5xl font-extrabold {% if disk.used_percent > 85 %}text-danger{% else %}text-neon{% endif %}">
+      {{ disk.used_percent }}%
+    </div>
+    <div class="font-mono text-[12px] text-gray-400 leading-relaxed">
+      <div>Used: <span class="text-white font-medium">{{ disk.used_gb }} GB</span></div>
+      <div>Free: <span class="text-white font-medium">{{ disk.free_gb }} GB</span></div>
+      <div>Total: <span class="text-white font-medium">{{ disk.total_gb }} GB</span></div>
+    </div>
+  </div>
+
+  <!-- Big Bar -->
+  <div class="h-3 bg-dark-border rounded-full overflow-hidden mb-6">
+    <div class="h-full rounded-full transition-all duration-700
+      {% if disk.used_percent > 85 %}bg-gradient-to-r from-warn to-danger{% else %}bg-gradient-to-r from-neon to-purple{% endif %}"
+      style="width:{{ disk.used_percent }}%"></div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid grid-cols-2 gap-3 mb-6">
+    <div class="bg-dark-raised rounded-lg p-4">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Source Videos</div>
+      <div class="font-mono text-2xl font-bold text-white">{{ download_jobs }}</div>
+      <div class="font-mono text-[10px] text-gray-500 mt-0.5">job folders in /downloads</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-4">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Clip Folders</div>
+      <div class="font-mono text-2xl font-bold text-purple">{{ clip_jobs }}</div>
+      <div class="font-mono text-[10px] text-gray-500 mt-0.5">job folders in /final</div>
+    </div>
+  </div>
+
+  <!-- Cleanup Actions -->
+  <div class="flex gap-3 flex-wrap">
+    <form method="POST" action="/storage/cleanup">
+      <input type="hidden" name="cleanup_type" value="downloads">
+      <button type="submit" class="bg-warn-dim border border-warn/20 text-warn font-semibold text-[12px] px-5 py-2 rounded-lg hover:bg-warn/20 transition cursor-pointer"
+        onclick="return confirm('Hapus semua source video?')">
+        🗑 Hapus Source Videos
+      </button>
+    </form>
+    <form method="POST" action="/storage/cleanup">
+      <input type="hidden" name="cleanup_type" value="old_clips">
+      <button type="submit" class="bg-warn-dim border border-warn/20 text-warn font-semibold text-[12px] px-5 py-2 rounded-lg hover:bg-warn/20 transition cursor-pointer"
+        onclick="return confirm('Hapus clips yang lebih dari 7 hari?')">
+        🗑 Hapus Clips Lama (7d)
+      </button>
+    </form>
+    <form method="POST" action="/storage/cleanup">
+      <input type="hidden" name="cleanup_type" value="emergency">
+      <button type="submit" class="bg-danger-dim border border-danger/20 text-danger font-semibold text-[12px] px-5 py-2 rounded-lg hover:bg-danger/20 transition cursor-pointer"
+        onclick="return confirm('⚠ Emergency cleanup! Ini akan menghapus banyak file.')">
+        ⚠ Emergency Cleanup
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

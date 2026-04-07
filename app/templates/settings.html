@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Settings — Clipper{% endblock %}
+{% block topbar_tag %}settings{% endblock %}
+
+{% block content %}
+<div>
+  <h1 class="text-xl font-bold text-white">Settings</h1>
+  <p class="font-mono text-[11px] text-gray-500 mt-1">// system configuration — edit via .env file</p>
+</div>
+
+<!-- TikTok Session -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-5">
+  <h2 class="text-sm font-semibold mb-4 flex items-center gap-2">
+    <span class="w-2 h-2 rounded-full {% if tiktok_session_valid %}bg-neon shadow-[0_0_6px] shadow-neon{% else %}bg-danger shadow-[0_0_6px] shadow-danger{% endif %}"></span>
+    TikTok Session
+  </h2>
+  <div class="grid grid-cols-2 gap-3 mb-4">
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Session Status</div>
+      <div class="font-mono text-sm font-medium {% if tiktok_session_valid %}text-neon{% else %}text-danger{% endif %}">
+        {{ 'Active ✓' if tiktok_session_valid else 'Expired / Missing ✗' }}
+      </div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Auto Upload</div>
+      <div class="font-mono text-sm font-medium {% if settings.TIKTOK_AUTO_UPLOAD %}text-neon{% else %}text-gray-400{% endif %}">
+        {{ 'ON' if settings.TIKTOK_AUTO_UPLOAD else 'OFF (Review Mode)' }}
+      </div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Max Uploads / Day</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.TIKTOK_MAX_UPLOADS_PER_DAY }}</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Delay Between Uploads</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.TIKTOK_DELAY_BETWEEN_UPLOADS_MIN // 60 }}-{{ settings.TIKTOK_DELAY_BETWEEN_UPLOADS_MAX // 60 }} min</div>
+    </div>
+  </div>
+
+  <!-- Upload Cookies / Login Instructions -->
+  <div class="bg-dark-raised rounded-lg p-4 mb-3">
+    <h3 class="font-semibold text-[13px] text-white mb-3">📋 How to Login to TikTok</h3>
+    <div class="space-y-2 text-[12px] text-gray-400 leading-relaxed">
+      <p><span class="text-neon font-mono font-bold">Method 1</span> — Browser Cookie Export (for VPS):</p>
+      <ol class="list-decimal ml-5 space-y-1">
+        <li>Install <a href="https://chromewebstore.google.com/detail/editthiscookie/fngmhnnpilhplaeedifhccceomclgfbg" target="_blank" class="text-purple hover:underline">EditThisCookie</a> extension di Chrome</li>
+        <li>Buka <a href="https://www.tiktok.com" target="_blank" class="text-purple hover:underline">tiktok.com</a> → Login ke akun kamu</li>
+        <li>Klik icon EditThisCookie → <span class="text-white font-medium">Export</span> (icon kotak)</li>
+        <li>Paste isinya di textarea dibawah → klik <span class="text-neon font-medium">Upload Cookies</span></li>
+      </ol>
+      <p class="mt-3"><span class="text-warn font-mono font-bold">Method 2</span> — Playwright Login (for local dev):</p>
+      <div class="bg-dark-bg rounded px-3 py-2 font-mono text-[11px] text-gray-300 mt-1">
+        cd app && python -c "from uploader import save_session; save_session()"
+      </div>
+      <p class="text-[11px] text-gray-500 mt-1">Ini akan membuka browser, login manual, lalu tekan Enter untuk save cookies.</p>
+    </div>
+  </div>
+
+  <!-- Cookie Upload Form -->
+  <form method="POST" action="/api/tiktok/upload-cookies" class="mb-3">
+    <label class="font-mono text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Paste Cookies JSON</label>
+    <textarea name="cookies_file" rows="4" placeholder='[{"name":"sessionid","value":"...","domain":".tiktok.com",...}]'
+      class="w-full bg-dark-bg border border-dark-border rounded-lg px-3 py-2 text-[12px] text-white placeholder-gray-600 focus:outline-none focus:border-purple/40 focus:ring-1 focus:ring-purple/20 transition font-mono resize-none"></textarea>
+    <div class="flex gap-2 mt-2">
+      <button type="submit"
+        class="bg-neon/10 border border-neon/20 text-neon font-semibold text-[12px] px-5 py-2 rounded-lg hover:bg-neon/20 transition cursor-pointer">
+        ✓ Upload Cookies
+      </button>
+      {% if tiktok_session_valid %}
+      <a href="#" onclick="event.preventDefault();if(confirm('Clear TikTok session?')){document.getElementById('clear-form').submit()}"
+        class="bg-danger-dim border border-danger/20 text-danger font-semibold text-[12px] px-5 py-2 rounded-lg hover:bg-danger/20 transition cursor-pointer inline-flex items-center">
+        ✗ Clear Session
+      </a>
+      {% endif %}
+    </div>
+  </form>
+  <form id="clear-form" method="POST" action="/api/tiktok/clear-session" class="hidden"></form>
+</div>
+
+<!-- AI / Groq -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-5">
+  <h2 class="text-sm font-semibold mb-4">🧠 AI Clip Detection</h2>
+  <div class="grid grid-cols-2 gap-3">
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">AI Enabled</div>
+      <div class="font-mono text-sm font-medium {% if settings.AI_CLIP_ENABLED %}text-neon{% else %}text-danger{% endif %}">
+        {{ 'ON — Viral Detection' if settings.AI_CLIP_ENABLED else 'OFF (Blind Cut)' }}
+      </div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Model</div>
+      <div class="font-mono text-sm font-medium text-purple">{{ settings.GROQ_MODEL.split('/')[-1] }}</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Min Viral Score</div>
+      <div class="font-mono text-sm font-medium text-warn">{{ settings.AI_MIN_VIRAL_SCORE }} / 10</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">API Key</div>
+      <div class="font-mono text-sm font-medium {% if settings.GROQ_API_KEY %}text-neon{% else %}text-danger{% endif %}">
+        {{ '••••' + settings.GROQ_API_KEY[-4:] if settings.GROQ_API_KEY else 'Not Set ✗' }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Processing -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-5">
+  <h2 class="text-sm font-semibold mb-4">⚙ Processing</h2>
+  <div class="grid grid-cols-3 gap-3">
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Whisper Model</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.WHISPER_MODEL }}</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Language</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.WHISPER_LANGUAGE }}</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">FFmpeg Threads</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.FFMPEG_THREADS }}</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Video Quality</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.VIDEO_MAX_HEIGHT }}p</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Clip Duration</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.DEFAULT_CLIP_MIN_DURATION }}-{{ settings.DEFAULT_CLIP_MAX_DURATION }}s</div>
+    </div>
+    <div class="bg-dark-raised rounded-lg p-3.5">
+      <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-1">Concurrency</div>
+      <div class="font-mono text-sm font-medium text-white">{{ settings.CELERY_CONCURRENCY }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Niches -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-5">
+  <h2 class="text-sm font-semibold mb-4">📂 Available Niches</h2>
+  <div class="flex flex-wrap gap-2">
+    {% for n in niches %}
+    <span class="font-mono text-[11px] px-3 py-1.5 rounded-lg bg-dark-raised border border-dark-border text-gray-300 hover:border-dark-border2 transition">
+      {{ n.label }}
+    </span>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

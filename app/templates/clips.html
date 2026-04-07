@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}All Clips — Clipper{% endblock %}
+{% block topbar_tag %}clips{% endblock %}
+
+{% block content %}
+<div>
+  <h1 class="text-xl font-bold text-white">All Clips</h1>
+  <p class="font-mono text-[11px] text-gray-500 mt-1">// {{ clips|length }} clips — review, preview, approve for TikTok</p>
+</div>
+
+{% if clips %}
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for clip in clips %}
+  <div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden hover:border-dark-border2 transition group">
+    <div class="bg-dark-raised aspect-video flex items-center justify-center relative">
+      <video src="/api/clips/{{ clip.id }}/preview" class="w-full h-full object-cover" preload="metadata"></video>
+      <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition cursor-pointer"
+           onclick="this.parentElement.querySelector('video').play()">
+        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+          <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        {% if clip.status.value == 'ready' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-purple-dim text-purple">
+          <span class="w-1 h-1 rounded-full bg-purple"></span>ready
+        </span>
+        {% elif clip.status.value == 'done' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-neon-dim text-neon">
+          <span class="w-1 h-1 rounded-full bg-neon"></span>uploaded
+        </span>
+        {% elif clip.status.value == 'failed' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-danger-dim text-danger">
+          <span class="w-1 h-1 rounded-full bg-danger"></span>failed
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-warn-dim text-warn">
+          <span class="w-1 h-1 rounded-full bg-warn animate-pulse"></span>{{ clip.status.value }}
+        </span>
+        {% endif %}
+
+        {% if clip.viral_score %}
+        <span class="font-mono text-[11px] font-bold text-warn">🔥 {{ clip.viral_score }}/10</span>
+        {% endif %}
+      </div>
+
+      <p class="text-[12px] text-gray-300 leading-relaxed line-clamp-2 mb-3">{{ clip.caption or 'No caption' }}</p>
+
+      <div class="flex items-center gap-2 text-[10px] font-mono text-gray-500 mb-3">
+        <span class="bg-dark-raised px-2 py-0.5 rounded">{{ clip.duration }}s</span>
+        <span class="bg-dark-raised px-2 py-0.5 rounded">{{ clip.file_size|filesize }}</span>
+        <span class="truncate max-w-[120px]">{{ clip.filename }}</span>
+      </div>
+
+      <div class="flex gap-2">
+        <a href="/api/clips/{{ clip.id }}/preview" target="_blank"
+          class="flex-1 text-center bg-dark-raised border border-dark-border text-gray-300 text-[12px] py-2 rounded-lg hover:bg-dark-border transition">
+          ▶ Preview
+        </a>
+        {% if clip.status.value == 'ready' %}
+        <button onclick="approveClip('{{ clip.id }}')"
+          class="flex-1 bg-neon/10 border border-neon/20 text-neon text-[12px] font-medium py-2 rounded-lg hover:bg-neon/20 transition cursor-pointer">
+          ✓ Approve
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-14 text-gray-500">
+  <p class="text-lg mb-1">No clips yet</p>
+  <p class="font-mono text-[11px]">Submit a YouTube URL on the <a href="/" class="text-neon hover:underline">Dashboard</a></p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function approveClip(clipId) {
+    const res = await fetch(`/api/clips/${clipId}/approve`, { method: 'POST' });
+    if (res.ok) location.reload();
+    else alert('Failed: ' + (await res.json()).detail);
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="id" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}Clipper{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: "Inter", sans-serif;
+        --font-mono: "JetBrains Mono", monospace;
+        --color-dark-bg: #0a0b0e;
+        --color-dark-surface: #111318;
+        --color-dark-raised: #191c24;
+        --color-dark-border: #1f2330;
+        --color-dark-border2: #2a2e3a;
+        --color-neon: #4ade80;
+        --color-neon-dim: rgba(74, 222, 128, 0.08);
+        --color-purple: #818cf8;
+        --color-purple-dim: rgba(129, 140, 248, 0.1);
+        --color-warn: #fb923c;
+        --color-warn-dim: rgba(251, 146, 60, 0.1);
+        --color-danger: #f87171;
+        --color-danger-dim: rgba(248, 113, 113, 0.1);
+      }
+    </style>
+    <style>
+      body {
+        background: var(--color-dark-bg);
+      }
+      /* Scrollbar */
+      ::-webkit-scrollbar {
+        width: 5px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #2a2e3a;
+        border-radius: 3px;
+      }
+    </style>
+    {% block head %}{% endblock %}
+  </head>
+  <body class="text-gray-300 font-sans text-sm antialiased min-h-screen">
+    <div class="grid grid-cols-[220px_1fr] grid-rows-[54px_1fr] min-h-screen">
+      <!-- ── Topbar ── -->
+      <header
+        class="col-span-2 bg-dark-surface border-b border-dark-border flex items-center px-6 gap-3"
+      >
+        <a
+          href="/"
+          class="font-mono font-bold text-[15px] text-neon tracking-tight hover:opacity-80 transition"
+        >
+          clipper<span class="text-gray-500 font-normal">.ai</span>
+        </a>
+        <div class="w-px h-5 bg-dark-border mx-1"></div>
+        <span
+          class="font-mono text-[11px] text-gray-500 bg-dark-raised px-2 py-0.5 rounded"
+        >
+          {% block topbar_tag %}dashboard{% endblock %}
+        </span>
+        <div class="ml-auto flex items-center gap-3">
+          <span class="font-mono text-[10px] text-gray-600"
+            >{{ disk_pct }}% disk</span
+          >
+          <div class="w-20 h-1 bg-dark-border rounded-full overflow-hidden">
+            <div
+              class="h-full bg-neon rounded-full transition-all duration-500"
+              style="width:{{ disk_pct }}%"
+            ></div>
+          </div>
+        </div>
+      </header>
+
+      <!-- ── Sidebar ── -->
+      <nav
+        class="bg-dark-surface border-r border-dark-border py-5 flex flex-col gap-0.5"
+      >
+        <span
+          class="font-mono text-[10px] text-gray-500 tracking-widest uppercase px-5 pb-1"
+          >Menu</span
+        >
+
+        <a
+          href="/"
+          class="nav-link {% if active_page == 'dashboard' %}active{% endif %}"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"
+            />
+          </svg>
+          Dashboard
+        </a>
+        <a
+          href="/jobs"
+          class="nav-link {% if active_page == 'jobs' %}active{% endif %}"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
+          </svg>
+          All Jobs
+        </a>
+        <a
+          href="/clips"
+          class="nav-link {% if active_page == 'clips' %}active{% endif %}"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
+          </svg>
+          Clips
+        </a>
+
+        <span
+          class="font-mono text-[10px] text-gray-500 tracking-widest uppercase px-5 mt-5 pb-1"
+          >System</span
+        >
+
+        <a
+          href="/storage"
+          class="nav-link {% if active_page == 'storage' %}active{% endif %}"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"
+            />
+          </svg>
+          Storage
+        </a>
+        <a
+          href="/settings"
+          class="nav-link {% if active_page == 'settings' %}active{% endif %}"
+        >
+          <svg
+            class="w-4 h-4"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+          Settings
+        </a>
+
+        <!-- Disk Bar Bottom -->
+        <div class="mt-auto px-5 pt-4 border-t border-dark-border">
+          <div
+            class="flex justify-between font-mono text-[10px] text-gray-500 mb-1.5"
+          >
+            <span>DISK</span><span>{{ disk_used }}GB</span>
+          </div>
+          <div class="h-1 bg-dark-border rounded-full overflow-hidden">
+            <div
+              class="h-full rounded-full transition-all duration-500 {% if disk_pct > 85 %}bg-danger{% else %}bg-neon{% endif %}"
+              style="width:{{ disk_pct }}%"
+            ></div>
+          </div>
+        </div>
+      </nav>
+
+      <!-- ── Main Content ── -->
+      <main class="overflow-y-auto p-7 flex flex-col gap-6 bg-black">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+
+    <style>
+      .nav-link {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 20px;
+        font-size: 13px;
+        color: #6b7280;
+        border-left: 2px solid transparent;
+        transition: all 0.15s;
+      }
+      .nav-link:hover {
+        color: #e2e4ea;
+        background: var(--color-dark-raised);
+      }
+      .nav-link.active {
+        color: var(--color-neon);
+        border-left-color: var(--color-neon);
+        background: var(--color-neon-dim);
+      }
+    </style>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

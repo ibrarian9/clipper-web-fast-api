@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title or 'Processing' }} — Clipper{% endblock %}
+{% block topbar_tag %}job detail{% endblock %}
+
+{% block content %}
+<!-- Back Link -->
+<a href="/jobs" class="inline-flex items-center gap-1.5 font-mono text-[12px] text-gray-500 hover:text-neon transition">
+  ← Back to All Jobs
+</a>
+
+<!-- Job Header -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-6">
+  <div class="flex items-start justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-white mb-1">{{ job.title or 'Processing...' }}</h1>
+      <div class="font-mono text-[11px] text-gray-500 flex items-center gap-3">
+        <span>{{ job.youtube_url[:60] }}...</span>
+        <span>·</span>
+        <span>{{ job.niche or 'finance' }}</span>
+        <span>·</span>
+        <span>{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '' }}</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-3">
+      {% if job.status.value == 'done' %}
+      <span class="inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-1 rounded-lg bg-neon-dim text-neon">
+        <span class="w-2 h-2 rounded-full bg-neon"></span>Done — {{ job.clip_count }} clips
+      </span>
+      {% elif job.status.value == 'failed' %}
+      <span class="inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-1 rounded-lg bg-danger-dim text-danger">
+        <span class="w-2 h-2 rounded-full bg-danger"></span>Failed
+      </span>
+      <form method="POST" action="/api/jobs/{{ job.id }}/retry" class="inline">
+        <button type="submit"
+          class="inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-1 rounded-lg bg-warn-dim text-warn border border-warn/20 hover:bg-warn/20 transition cursor-pointer">
+          ⟳ Retry
+        </button>
+      </form>
+      {% else %}
+      <span class="inline-flex items-center gap-1.5 font-mono text-xs font-medium px-3 py-1 rounded-lg bg-warn-dim text-warn">
+        <span class="w-2 h-2 rounded-full bg-warn animate-pulse"></span>{{ job.status.value }}
+      </span>
+      {% endif %}
+    </div>
+  </div>
+  {% if job.error %}
+  <div class="mt-3 bg-danger-dim border border-danger/20 rounded-lg p-3 font-mono text-[12px] text-danger">
+    {{ job.error }}
+  </div>
+  {% endif %}
+</div>
+
+<!-- Clips Grid -->
+{% if clips %}
+<div class="flex items-center justify-between">
+  <h2 class="text-base font-semibold">Clips ({{ clips|length }})</h2>
+  <form method="POST" action="/api/clips/approve-all" class="inline">
+    <input type="hidden" name="job_id" value="{{ job.id }}">
+    <button type="submit"
+      class="bg-neon/10 border border-neon/20 text-neon font-mono text-[12px] font-medium px-4 py-1.5 rounded-lg hover:bg-neon/20 transition cursor-pointer">
+      ✓ Approve All
+    </button>
+  </form>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+  {% for clip in clips %}
+  <div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden hover:border-dark-border2 transition group">
+    <!-- Video Preview with Cover -->
+    <div class="bg-dark-raised aspect-video flex items-center justify-center relative">
+      {% if clip.cover_path %}
+      <img src="/api/clips/{{ clip.id }}/cover" alt="Cover" class="w-full h-full object-cover absolute inset-0 z-0 clip-cover-{{ clip.id }}" />
+      {% endif %}
+      <video src="/api/clips/{{ clip.id }}/preview" 
+             {% if clip.cover_path %}poster="/api/clips/{{ clip.id }}/cover"{% endif %}
+             class="w-full h-full object-cover relative z-10" preload="metadata"
+             onplay="const c=document.querySelector('.clip-cover-{{ clip.id }}');if(c)c.style.display='none'"
+             onpause="const c=document.querySelector('.clip-cover-{{ clip.id }}');if(c)c.style.display=''"
+      ></video>
+      <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition cursor-pointer z-20"
+           onclick="const v=this.parentElement.querySelector('video');v.play();this.style.display='none'">
+        <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
+          <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        </div>
+      </div>
+    </div>
+    <div class="p-4">
+      <div class="flex items-center justify-between mb-2">
+        {% if clip.status.value == 'ready' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-purple-dim text-purple">
+          <span class="w-1 h-1 rounded-full bg-purple"></span>ready
+        </span>
+        {% elif clip.status.value == 'done' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-neon-dim text-neon">
+          <span class="w-1 h-1 rounded-full bg-neon"></span>uploaded
+        </span>
+        {% elif clip.status.value == 'failed' %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-danger-dim text-danger">
+          <span class="w-1 h-1 rounded-full bg-danger"></span>failed
+        </span>
+        {% else %}
+        <span class="inline-flex items-center gap-1.5 font-mono text-[10px] font-medium px-2 py-0.5 rounded bg-warn-dim text-warn">
+          <span class="w-1 h-1 rounded-full bg-warn animate-pulse"></span>{{ clip.status.value }}
+        </span>
+        {% endif %}
+
+        {% if clip.viral_score %}
+        <span class="font-mono text-[11px] font-bold text-warn">🔥 {{ clip.viral_score }}/10</span>
+        {% endif %}
+      </div>
+
+      <p class="text-[12px] text-gray-300 leading-relaxed line-clamp-2 mb-3">{{ clip.caption or 'No caption' }}</p>
+
+      <div class="flex items-center gap-2 text-[10px] font-mono text-gray-500 mb-3">
+        <span class="bg-dark-raised px-2 py-0.5 rounded">{{ clip.duration }}s</span>
+        <span class="bg-dark-raised px-2 py-0.5 rounded">{{ clip.file_size|filesize }}</span>
+        <span class="truncate max-w-[120px]">{{ clip.filename }}</span>
+      </div>
+
+      {% if clip.status.value == 'ready' %}
+      <button onclick="approveClip('{{ clip.id }}')"
+        class="w-full bg-neon/10 border border-neon/20 text-neon font-semibold text-[12px] py-2 rounded-lg hover:bg-neon/20 transition cursor-pointer">
+        ✓ Approve for TikTok
+      </button>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% elif job.status.value not in ['done', 'failed'] %}
+<!-- ═══ LIVE PROGRESS STEPPER ═══ -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-6" id="progress-panel">
+  <h2 class="text-sm font-semibold mb-5 flex items-center gap-2">
+    <svg class="w-4 h-4 text-warn animate-spin" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" opacity="0.3"/><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+    Pipeline Running
+  </h2>
+
+  <!-- Steps -->
+  <div class="flex items-center gap-0 mb-6">
+    {% set steps = [
+      ("downloading", "Download", "📥"),
+      ("transcribing", "Transcribe", "🎤"),
+      ("clipping", "AI + Clip", "🧠"),
+      ("done", "Done", "✅")
+    ] %}
+    {% set current_idx = {"downloading": 0, "transcribing": 1, "clipping": 2, "done": 3, "failed": 3}.get(job.status.value, 0) %}
+    {% for key, label, icon in steps %}
+    <div class="flex-1 flex flex-col items-center gap-2 step-item" data-step="{{ key }}">
+      <div class="w-10 h-10 rounded-full flex items-center justify-center text-lg transition-all duration-500
+        {% if loop.index0 < current_idx %}bg-neon/20 border-2 border-neon text-neon
+        {% elif loop.index0 == current_idx %}bg-warn/20 border-2 border-warn text-warn animate-pulse
+        {% else %}bg-dark-raised border-2 border-dark-border text-gray-500{% endif %}"
+        id="step-{{ loop.index0 }}">
+        {{ icon }}
+      </div>
+      <span class="font-mono text-[10px] {% if loop.index0 <= current_idx %}text-gray-300{% else %}text-gray-600{% endif %} transition">{{ label }}</span>
+    </div>
+    {% if not loop.last %}
+    <div class="flex-1 h-0.5 rounded-full -mt-5 transition-all duration-700
+      {% if loop.index0 < current_idx %}bg-neon{% else %}bg-dark-border{% endif %}"
+      id="line-{{ loop.index0 }}"></div>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <!-- Live Detail -->
+  <div class="bg-dark-raised rounded-lg p-4" id="live-detail">
+    <div class="flex items-center gap-2">
+      <div class="w-2 h-2 rounded-full bg-warn animate-pulse"></div>
+      <span class="font-mono text-[12px] text-gray-300" id="progress-text">{{ job.progress or 'Initializing...' }}</span>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="text-center py-14 text-gray-500">No clips generated</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  async function approveClip(clipId) {
+    const res = await fetch(`/api/clips/${clipId}/approve`, { method: 'POST' });
+    if (res.ok) location.reload();
+    else alert('Failed: ' + (await res.json()).detail);
+  }
+
+  // ── Live SSE progress updates ──
+  {% if job.status.value not in ['done', 'failed'] %}
+  const stepMap = { downloading: 0, transcribing: 1, clipping: 2, done: 3, failed: 3 };
+  const es = new EventSource('/api/jobs/{{ job.id }}/stream');
+
+  es.onmessage = (e) => {
+    const d = JSON.parse(e.data);
+    const idx = stepMap[d.status] ?? 0;
+
+    // Update step circles
+    for (let i = 0; i < 4; i++) {
+      const el = document.getElementById('step-' + i);
+      if (!el) continue;
+      el.className = el.className.replace(/bg-\S+|border-\S+|text-\S+|animate-\S+/g, '').trim();
+      if (i < idx) {
+        el.classList.add('bg-neon/20', 'border-2', 'border-neon', 'text-neon');
+      } else if (i === idx) {
+        el.classList.add('bg-warn/20', 'border-2', 'border-warn', 'text-warn', 'animate-pulse');
+      } else {
+        el.classList.add('bg-dark-raised', 'border-2', 'border-dark-border', 'text-gray-500');
+      }
+      // Re-add base layout classes
+      el.classList.add('w-10', 'h-10', 'rounded-full', 'flex', 'items-center', 'justify-center', 'text-lg', 'transition-all', 'duration-500');
+    }
+
+    // Update connector lines
+    for (let i = 0; i < 3; i++) {
+      const line = document.getElementById('line-' + i);
+      if (!line) continue;
+      line.className = 'flex-1 h-0.5 rounded-full -mt-5 transition-all duration-700 ' + (i < idx ? 'bg-neon' : 'bg-dark-border');
+    }
+
+    // Update progress text
+    const txt = document.getElementById('progress-text');
+    if (txt && d.progress) txt.textContent = d.progress;
+
+    // Done or failed → reload
+    if (d.status === 'done' || d.status === 'failed') {
+      es.close();
+      setTimeout(() => location.reload(), 1000);
+    }
+  };
+  {% endif %}
+</script>
+{% endblock %}
+

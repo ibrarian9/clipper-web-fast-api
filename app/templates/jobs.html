@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}All Jobs — Clipper{% endblock %}
+{% block topbar_tag %}all jobs{% endblock %}
+
+{% block content %}
+<div>
+  <h1 class="text-xl font-bold text-white">All Jobs</h1>
+  <p class="font-mono text-[11px] text-gray-500 mt-1">// {{ jobs|length }} total jobs</p>
+</div>
+
+<div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden">
+  {% if jobs %}
+  <table class="w-full">
+    <thead>
+      <tr class="border-b border-dark-border">
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Status</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Title</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Niche</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Clips</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Created</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5"></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr class="border-b border-dark-border last:border-b-0 hover:bg-dark-raised transition cursor-pointer" onclick="location.href='/jobs/{{ job.id }}'">
+        <td class="px-5 py-3">
+          {% if job.status.value == 'done' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-neon-dim text-neon">
+            <span class="w-1.5 h-1.5 rounded-full bg-neon"></span>done
+          </span>
+          {% elif job.status.value == 'failed' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-danger-dim text-danger">
+            <span class="w-1.5 h-1.5 rounded-full bg-danger"></span>failed
+          </span>
+          {% elif job.status.value == 'pending' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-gray-500/10 text-gray-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>pending
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-warn-dim text-warn">
+            <span class="w-1.5 h-1.5 rounded-full bg-warn animate-pulse"></span>{{ job.status.value }}
+          </span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 max-w-[300px] truncate text-white">{{ job.title or 'Processing...' }}</td>
+        <td class="px-5 py-3 font-mono text-[12px] text-gray-400">{{ job.niche or 'finance' }}</td>
+        <td class="px-5 py-3 font-mono text-sm text-purple font-medium">{{ job.clip_count }}</td>
+        <td class="px-5 py-3 font-mono text-[11px] text-gray-500">{{ job.created_at.strftime('%Y-%m-%d %H:%M') if job.created_at else '-' }}</td>
+        <td class="px-5 py-3">
+          <form method="POST" action="/api/jobs/{{ job.id }}/delete" onclick="event.stopPropagation()">
+            <button type="submit" class="font-mono text-[11px] text-gray-500 hover:text-danger transition cursor-pointer"
+              onclick="return confirm('Delete this job and all its clips?')">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="text-center py-14 text-gray-500">
+    <p class="text-lg mb-1">No jobs yet</p>
+    <p class="font-mono text-[11px]">Go to <a href="/" class="text-neon hover:underline">Dashboard</a> to create one</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

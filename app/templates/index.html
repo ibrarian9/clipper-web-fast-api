@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Clipper{% endblock %}
+{% block topbar_tag %}dashboard{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="grid grid-cols-4 gap-4">
+  <div class="bg-dark-surface border border-dark-border rounded-xl p-5 hover:border-dark-border2 transition">
+    <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-2">Total Jobs</div>
+    <div class="font-mono text-3xl font-bold text-white">{{ stats.total }}</div>
+  </div>
+  <div class="bg-dark-surface border border-dark-border rounded-xl p-5 hover:border-dark-border2 transition">
+    <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-2">Total Clips</div>
+    <div class="font-mono text-3xl font-bold text-purple">{{ stats.clips }}</div>
+  </div>
+  <div class="bg-dark-surface border border-dark-border rounded-xl p-5 hover:border-dark-border2 transition">
+    <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-2">Active</div>
+    <div class="font-mono text-3xl font-bold text-warn">{{ stats.active }}</div>
+  </div>
+  <div class="bg-dark-surface border border-dark-border rounded-xl p-5 hover:border-dark-border2 transition">
+    <div class="font-mono text-[10px] text-gray-500 uppercase tracking-wider mb-2">Failed</div>
+    <div class="font-mono text-3xl font-bold text-danger">{{ stats.failed }}</div>
+  </div>
+</div>
+
+<!-- New Job Form -->
+<div class="bg-dark-surface border border-dark-border rounded-xl p-6">
+  <h2 class="text-base font-semibold mb-4 flex items-center gap-2">
+    <span class="w-2 h-2 rounded-full bg-neon animate-pulse"></span>
+    New Clip Job
+  </h2>
+  <form method="POST" action="/jobs" class="flex items-end gap-3">
+    <div class="flex-1">
+      <label class="font-mono text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">YouTube URL</label>
+      <input type="url" name="youtube_url" required placeholder="https://www.youtube.com/watch?v=..."
+        class="w-full bg-dark-raised border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-neon/40 focus:ring-1 focus:ring-neon/20 transition font-mono" />
+    </div>
+    <div class="w-32">
+      <label class="font-mono text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Max Duration</label>
+      <input type="number" name="max_clip_duration" value="90" min="30" max="180"
+        class="w-full bg-dark-raised border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-neon/40 transition font-mono" />
+    </div>
+    <div class="w-48">
+      <label class="font-mono text-[10px] text-gray-500 uppercase tracking-wider block mb-1.5">Niche</label>
+      <select name="niche"
+        class="w-full bg-dark-raised border border-dark-border rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-neon/40 transition font-mono appearance-none">
+        {% for n in niches %}
+        <option value="{{ n.value }}">{{ n.label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit"
+      class="bg-neon/10 border border-neon/20 text-neon font-semibold px-6 py-2.5 rounded-lg hover:bg-neon/20 transition text-sm cursor-pointer whitespace-nowrap">
+      ▶ Process
+    </button>
+  </form>
+</div>
+
+<!-- Recent Jobs Table -->
+<div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden">
+  <div class="flex items-center justify-between px-5 py-3.5 border-b border-dark-border">
+    <h2 class="text-sm font-semibold">Recent Jobs</h2>
+    <a href="/jobs" class="font-mono text-[11px] text-neon hover:text-neon/80 transition">View all →</a>
+  </div>
+  {% if jobs %}
+  <table class="w-full">
+    <thead>
+      <tr class="border-b border-dark-border">
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Status</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Title</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Niche</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Clips</th>
+        <th class="text-left font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Time</th>
+        <th class="text-right font-mono text-[10px] text-gray-500 uppercase tracking-wider px-5 py-2.5">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr class="border-b border-dark-border last:border-b-0 hover:bg-dark-raised transition cursor-pointer" onclick="location.href='/jobs/{{ job.id }}'">
+        <td class="px-5 py-3">
+          {% if job.status.value == 'done' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-neon-dim text-neon">
+            <span class="w-1.5 h-1.5 rounded-full bg-neon"></span>done
+          </span>
+          {% elif job.status.value == 'failed' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-danger-dim text-danger">
+            <span class="w-1.5 h-1.5 rounded-full bg-danger"></span>failed
+          </span>
+          {% elif job.status.value == 'pending' %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-gray-500/10 text-gray-400">
+            <span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>pending
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1.5 font-mono text-[11px] font-medium px-2.5 py-0.5 rounded bg-warn-dim text-warn">
+            <span class="w-1.5 h-1.5 rounded-full bg-warn animate-pulse"></span>{{ job.status.value }}
+          </span>
+          {% endif %}
+        </td>
+        <td class="px-5 py-3 max-w-[300px] truncate">{{ job.title or 'Processing...' }}</td>
+        <td class="px-5 py-3 font-mono text-[12px] text-gray-400">{{ job.niche or 'finance' }}</td>
+        <td class="px-5 py-3 font-mono text-sm text-purple font-medium">{{ job.clip_count }}</td>
+        <td class="px-5 py-3 font-mono text-[11px] text-gray-500">{{ job.created_at.strftime('%m/%d %H:%M') if job.created_at else '-' }}</td>
+        <td class="px-5 py-3 text-right">
+          <form method="POST" action="/api/jobs/{{ job.id }}/delete" onsubmit="return confirm('Delete this job and all its clips?')" onclick="event.stopPropagation()">
+            <button type="submit" class="text-gray-600 hover:text-danger transition text-sm cursor-pointer" title="Delete job">
+              ✗
+            </button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="text-center py-14 text-gray-500">
+    <p class="text-lg mb-1">No jobs yet</p>
+    <p class="font-mono text-[11px]">Paste a YouTube URL above to start</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
