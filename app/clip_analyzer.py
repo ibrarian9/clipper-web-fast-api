@@ -9,7 +9,7 @@ Instead of blindly cutting every 60-90 seconds, this module:
 import json
 import logging
 from groq import Groq
-from config import settings
+from app.config import settings
 from dataclasses import dataclass, field
 
 

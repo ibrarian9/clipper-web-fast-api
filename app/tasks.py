@@ -28,7 +28,7 @@ import uuid
 import re
 import logging
 
-from config import settings
+from app.config import settings
 from database import SessionLocal
 from models import Job, Clip, JobStatus, ClipStatus
 

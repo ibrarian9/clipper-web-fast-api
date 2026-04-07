@@ -5,7 +5,7 @@ import shutil
 import logging
 from pathlib import Path
 from datetime import datetime, timedelta
-from config import settings
+from app.config import settings
 
 logger = logging.getLogger(__name__)
 
