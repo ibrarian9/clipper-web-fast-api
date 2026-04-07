@@ -162,6 +162,14 @@ def run_pipeline(self, job_id: str, youtube_url: str, max_clip_duration: int = 9
             raw_clips = smart_clip(video_path, srt_path, job_id, min_dur, max_clip_duration)
             clips_data = [(p, c, d, 0) for p, c, d in raw_clips]  # viral_score=0
 
+        # ── Cap at 5 clips max ──
+        MAX_CLIPS = 5
+        if len(clips_data) > MAX_CLIPS:
+            # Sort by viral_score descending, keep top 5
+            clips_data.sort(key=lambda x: x[3], reverse=True)
+            clips_data = clips_data[:MAX_CLIPS]
+            logger.info(f"[{job_id[:8]}] Capped to {MAX_CLIPS} clips (dropped {len(clips_data) - MAX_CLIPS} lower-scored)")
+
         # ── Step 4: Save clips to DB ──
         job.progress = f"Saving {len(clips_data)} clips to database..."
         db.commit()
@@ -367,6 +375,11 @@ def smart_clip(
             if len(current_segs) > 3:
                 caption += "..."
             cut_points.append((current_start, current_segs[-1]["end"], caption))
+
+    # Cap at 5 clips max
+    MAX_CLIPS = 10
+    if len(cut_points) > MAX_CLIPS:
+        cut_points = cut_points[:MAX_CLIPS]
 
     total = len(cut_points)
     logger.info(f"[{job_id[:8]}] smart_clip: {total} clips to cut")
