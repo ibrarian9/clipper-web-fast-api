@@ -54,7 +54,7 @@ class Settings(BaseSettings):
     CELERY_CONCURRENCY: int = 1             # 1 job at a time on 2vCPU
 
     class Config:
-        env_file = ".env"
+        env_file = str(Path(__file__).resolve().parent.parent / ".env")
         env_file_encoding = "utf-8"
 
 
