@@ -261,14 +261,13 @@ def download_video(url: str, job_id: str) -> tuple[Path, str]:
         "merge_output_format": "mp4",
         "quiet": True,
         "no_warnings": True,
-        "allow_unsecure_tools": True,
         "progress_hooks": [_progress_hook],
-        "js_runtimes": {"node": {"executable": "/home/vinzel/.nvm/versions/node/v24.14.1/bin/node"}},
+        "js_runtimes": {"node": {"executable": "/usr/local/bin/node"}},
         "remote_components": {"ejs:github"},
         # Use android client to bypass PO Token requirement
         "extractor_args": {
             "youtube": {
-                "player_client": ["ios", "android", "web"]}
+                "player_client": ["web"]}
             },
         # Speed & reliability
         "socket_timeout": 30,
