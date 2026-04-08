@@ -256,16 +256,21 @@ def download_video(url: str, job_id: str) -> tuple[Path, str]:
             f"bestvideo[height<={settings.VIDEO_MAX_HEIGHT}]+bestaudio/"
             "18/best"
         ),
+        "cookiesfile": "/opt/clipper-app/clipper-web-fast-api/cookies.txt",
         "outtmpl": str(out_path / "%(title)s.%(ext)s"),
         "merge_output_format": "mp4",
         "quiet": True,
         "no_warnings": True,
         "progress_hooks": [_progress_hook],
+        "js_runtime": "node",
         # Use android client to bypass PO Token requirement
-        "extractor_args": {"youtube": {"player_client": ["android", "web"]}},
+        "extractor_args": {
+            "youtube": {
+                "player_client": ["ios", "android", "web"]}
+            },
         # Speed & reliability
         "socket_timeout": 30,
-        "retries": 3,
+        "retries": 5,
         "concurrent_fragment_downloads": 4,
         "ignore_no_formats_error": True,
     }
