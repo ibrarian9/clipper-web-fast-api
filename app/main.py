@@ -20,7 +20,7 @@ from app.storage import get_disk_usage, ensure_storage_dirs
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="Clipper", version="1.0.0")
-templates = Jinja2Templates(directory="templates")
+templates = Jinja2Templates(directory="/opt/clipper-app/clipper-web-fast-api/app/templates")
 
 
 # ── Jinja2 custom filters ──
