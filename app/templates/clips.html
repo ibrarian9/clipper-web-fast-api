@@ -12,10 +12,13 @@
 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
   {% for clip in clips %}
   <div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden hover:border-dark-border2 transition group">
-    <div class="bg-dark-raised aspect-video flex items-center justify-center relative">
-      <video src="/api/clips/{{ clip.id }}/preview" class="w-full h-full object-cover" preload="metadata"></video>
-      <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition cursor-pointer"
-           onclick="this.parentElement.querySelector('video').play()">
+    <div class="bg-dark-raised aspect-video flex items-center justify-center relative cursor-pointer" onclick="toggleVideo(this)">
+      <video src="/api/clips/{{ clip.id }}/preview" class="w-full h-full object-cover" preload="metadata"
+             onplay="this.closest('.relative').querySelector('.play-overlay').style.display='none'"
+             onpause="this.closest('.relative').querySelector('.play-overlay').style.display='flex'"
+             onended="this.closest('.relative').querySelector('.play-overlay').style.display='flex'"
+      ></video>
+      <div class="play-overlay absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition z-20 pointer-events-none">
         <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
           <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </div>

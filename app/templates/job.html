@@ -67,18 +67,18 @@
   {% for clip in clips %}
   <div class="bg-dark-surface border border-dark-border rounded-xl overflow-hidden hover:border-dark-border2 transition group">
     <!-- Video Preview with Cover -->
-    <div class="bg-dark-raised aspect-video flex items-center justify-center relative">
+    <div class="bg-dark-raised aspect-video flex items-center justify-center relative" onclick="toggleVideo(this)">
       {% if clip.cover_path %}
       <img src="/api/clips/{{ clip.id }}/cover" alt="Cover" class="w-full h-full object-cover absolute inset-0 z-0 clip-cover-{{ clip.id }}" />
       {% endif %}
-      <video src="/api/clips/{{ clip.id }}/preview" 
+      <video src="/api/clips/{{ clip.id }}/preview"
              {% if clip.cover_path %}poster="/api/clips/{{ clip.id }}/cover"{% endif %}
              class="w-full h-full object-cover relative z-10" preload="metadata"
-             onplay="const c=document.querySelector('.clip-cover-{{ clip.id }}');if(c)c.style.display='none'"
-             onpause="const c=document.querySelector('.clip-cover-{{ clip.id }}');if(c)c.style.display=''"
+             onplay="this.closest('.relative').querySelector('.play-overlay').style.display='none'; const c=document.querySelector('.clip-cover-{{ clip.id }}');if(c)c.style.display='none'"
+             onpause="this.closest('.relative').querySelector('.play-overlay').style.display='flex'"
+             onended="this.closest('.relative').querySelector('.play-overlay').style.display='flex'"
       ></video>
-      <div class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition cursor-pointer z-20"
-           onclick="const v=this.parentElement.querySelector('video');v.play();this.style.display='none'">
+      <div class="play-overlay absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition z-20 pointer-events-none">
         <div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
           <svg class="w-5 h-5 text-white ml-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
         </div>

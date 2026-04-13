@@ -224,6 +224,20 @@
       }
     </style>
 
+    <script>
+      // Global: toggle play/pause on video container click
+      function toggleVideo(container) {
+        const v = container.querySelector('video');
+        if (!v) return;
+        if (v.paused) {
+          v.play();
+        } else {
+          v.pause();
+        }
+      }
+    </script>
+
     {% block scripts %}{% endblock %}
+
   </body>
 </html>

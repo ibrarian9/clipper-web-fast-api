@@ -415,6 +415,64 @@ def smart_clip(
     return clips
 
 
+def _make_clip_srt(srt_path: Path, start: float, end: float, out_srt: Path) -> int:
+    """Create a trimmed SRT file for a clip window with timestamps reset to 0.
+
+    This fixes the subtitle sync bug: if we use the full-episode SRT with -ss,
+    subtitles show wrong text because FFmpeg still uses absolute timestamps.
+    We trim to only lines inside [start, end] and shift all times by -start.
+    Returns count of subtitle entries written.
+    """
+    entries = []
+    with open(srt_path, "r", encoding="utf-8") as f:
+        raw = f.read()
+
+    # Parse SRT blocks
+    import re as re_mod
+    blocks = re_mod.split(r"\n\n+", raw.strip())
+    for block in blocks:
+        lines = block.strip().splitlines()
+        if len(lines) < 3:
+            continue
+        # Parse timecode line: 00:00:01,500 --> 00:00:03,200
+        tc_line = next((l for l in lines if "-->" in l), None)
+        if not tc_line:
+            continue
+        try:
+            t_start_str, t_end_str = tc_line.split("-->")
+            def tc_to_sec(s: str) -> float:
+                s = s.strip().replace(",", ".")
+                parts = s.split(":")
+                h, m, sec = float(parts[0]), float(parts[1]), float(parts[2])
+                return h * 3600 + m * 60 + sec
+            t_start = tc_to_sec(t_start_str)
+            t_end = tc_to_sec(t_end_str)
+        except Exception:
+            continue
+
+        # Only keep subtitles that fall in the clip window
+        if t_end <= start or t_start >= end:
+            continue
+
+        # Clamp and shift by -start
+        clamp_start = max(0.0, t_start - start)
+        clamp_end = min(end - start, t_end - start)
+        text = "\n".join(l for l in lines if l != lines[0] and "-->" not in l and l.strip())
+        entries.append((clamp_start, clamp_end, text))
+
+    def sec_to_srt(s: float) -> str:
+        h = int(s // 3600)
+        m = int((s % 3600) // 60)
+        sec = s % 60
+        return f"{h:02d}:{m:02d}:{sec:06.3f}".replace(".", ",")
+
+    with open(out_srt, "w", encoding="utf-8") as f:
+        for i, (s, e, text) in enumerate(entries, 1):
+            f.write(f"{i}\n{sec_to_srt(s)} --> {sec_to_srt(e)}\n{text}\n\n")
+
+    return len(entries)
+
+
 def cut_and_burn(
     video_path: Path,
     srt_path: Path,
@@ -428,18 +486,33 @@ def cut_and_burn(
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / f"clip_{idx:03d}.mp4"
 
-    # ✅ FIXED: Escape path for FFmpeg subtitle filter
-    escaped_srt = str(srt_path).replace("\\", "/").replace(":", "\\\\:").replace("'", "\\'")
+    # ── Fix #1: Create clip-specific SRT with timestamps reset to 0 ──
+    # This ensures "Hello" at t=125s shows at t=0 of the clip, not at t=125s
+    clip_srt = out_dir / f"clip_{idx:03d}.srt"
+    n_entries = _make_clip_srt(srt_path, start, end, clip_srt)
 
-    # FFmpeg: crop to 9:16, scale to TikTok resolution, burn subtitles
-    vf = (
-        f"crop=ih*9/16:ih,"
-        f"scale=1080:1920,"
-        f"subtitles='{escaped_srt}':"
-        f"force_style='FontName=Arial,FontSize=18,PrimaryColour=&HFFFFFF,"
-        f"OutlineColour=&H000000,Bold=1,Outline=2,Shadow=1,"
-        f"Alignment=2,MarginV=80'"
-    )
+    if n_entries > 0:
+        # Escape path for FFmpeg subtitle filter
+        escaped_srt = str(clip_srt).replace("\\", "/").replace(":", "\\\\:").replace("'", "\\'")
+
+        # ── Fix #2: Better subtitle style ──
+        # FontSize=22 (was 18, too small on 1920px)
+        # MarginV=120 ≈ 6% from bottom on 1920px (was 80, too high → covering face)
+        # Alignment=2 = bottom-center
+        subtitle_filter = (
+            f"subtitles='{escaped_srt}':"
+            f"force_style='FontName=DejaVu Sans,FontSize=22,PrimaryColour=&HFFFFFF,"
+            f"OutlineColour=&H000000,Bold=1,Outline=2,Shadow=1,"
+            f"Alignment=2,MarginV=120'"
+        )
+    else:
+        subtitle_filter = None  # No subtitles for this window
+
+    # Build video filter chain
+    vf_parts = ["crop=ih*9/16:ih", "scale=1080:1920"]
+    if subtitle_filter:
+        vf_parts.append(subtitle_filter)
+    vf = ",".join(vf_parts)
 
     cmd = [
         "ffmpeg", "-y",
@@ -449,7 +522,7 @@ def cut_and_burn(
         "-c:v", "libx264",
         "-preset", settings.FFMPEG_PRESET,
         "-crf", str(settings.FFMPEG_CRF),
-        "-threads", str(settings.FFMPEG_THREADS),   # ✅ FIXED: Limit CPU usage on VPS
+        "-threads", str(settings.FFMPEG_THREADS),
         "-c:a", "aac", "-b:a", "128k",
         str(out_path),
     ]
