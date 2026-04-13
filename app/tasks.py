@@ -256,7 +256,7 @@ def download_video(url: str, job_id: str) -> tuple[Path, str]:
             f"bestvideo[height<={settings.VIDEO_MAX_HEIGHT}]+bestaudio/"
             "18/best"
         ),
-        "cookiefile": "/opt/clipper-app/clipper-web-fast-api/www.youtube.com_cookies.txt",
+        "cookiefile": "/opt/clipper-app/clipper-web-fast-api/youtube_cookies.txt",
         "outtmpl": str(out_path / "%(title)s.%(ext)s"),
         "merge_output_format": "mp4",
         "quiet": True,
